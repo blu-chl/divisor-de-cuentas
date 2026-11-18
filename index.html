@@ -149,6 +149,8 @@ details .sum .tot { font-size: 16px; }
     <div class="card">
       <h2>Tu cuenta</h2>
       <div id="sum"></div>
+      <button class="btn" id="confirmBtn" type="button" style="width:100%;margin-top:12px">Confirmo mi consumo y obtener datos de transferencia</button>
+      <p class="hint" id="confirmHint"></p>
       <textarea id="msg" rows="8" readonly aria-label="Mensaje para enviar al cobrador"></textarea>
       <p class="hint" id="sendHint"></p>
       <div class="actions">
@@ -158,7 +160,7 @@ details .sum .tot { font-size: 16px; }
       </div>
       <p class="hint">Pega el mensaje en el chat del grupo o envíalo directo a quien pagó la cuenta, y luego haz la transferencia por el total.</p>
     </div>
-    <div class="card">
+    <div class="card" id="bankCard" hidden>
       <h2>Datos para transferir</h2>
       <div id="bank"></div>
       <button class="btn alt" id="bankAll" type="button">Copiar monto + datos de transferencia</button>
@@ -213,6 +215,7 @@ if (!state || typeof state !== 'object') state = {};
 state.name = typeof state.name === 'string' ? state.name : '';
 state.claims = state.claims && typeof state.claims === 'object' ? state.claims : {};
 state.split = state.split && typeof state.split === 'object' ? state.split : {};
+state.confirmed = state.confirmed === true;
 const save = () => store.set('cuenta521', state);
 
 /* ---- cálculo ---- */
@@ -300,10 +303,21 @@ function renderSummary() {
   $('#addCob').disabled = !ready;
   $('#waBtn').setAttribute('aria-disabled', String(!ready));
   $('#waBtn').href = ready ? 'https://wa.me/?text=' + encodeURIComponent(msg) : '#';
+  $('#bankCard').hidden = !(state.confirmed && ready);
+  $('#confirmBtn').hidden = state.confirmed && ready;
+  $('#confirmHint').textContent = ready || lines.length === 0 ? '' : 'Escribe tu nombre para confirmar.';
   const hint = $('#sendHint');
   hint.className = 'hint';
   hint.textContent = lines.length === 0 ? '' : (name ? '' : 'Escribe tu nombre para generar el mensaje.');
 }
+
+$('#confirmBtn').addEventListener('click', () => {
+  const lines = buildLines(state.claims, state.split);
+  if (!lines.length) return;
+  if (!sanitizeName(state.name)) { $('#nameField').classList.add('err'); $('#nombre').focus(); return; }
+  state.confirmed = true; save(); renderSummary();
+  $('#bankCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
 
 function renderMine() { renderItems(); renderSummary(); }
 
@@ -319,6 +333,7 @@ $('#items').addEventListener('click', e => {
   else if (act === 'ninc') state.split[id] = Math.min(10, (state.split[id] || 2) + 1);
   else if (act === 'ndec') state.split[id] = Math.max(2, (state.split[id] || 2) - 1);
   if (!state.claims[id]) delete state.claims[id];
+  state.confirmed = false;
   save();
   const f = document.activeElement && document.activeElement.dataset ? { act: document.activeElement.dataset.act, id: document.activeElement.dataset.id } : null;
   renderMine();
@@ -328,6 +343,7 @@ $('#items').addEventListener('click', e => {
 $('#nombre').value = state.name;
 $('#nombre').addEventListener('input', e => {
   state.name = e.target.value;
+  state.confirmed = false;
   $('#nameField').classList.remove('err');
   save();
   renderSummary();
