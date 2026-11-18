@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+:root{color-scheme:light}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+<title>Cuenta Mesa 521</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: una columna tipo ticket, pensada para celular. Pestañas: "Mi consumo" (cada amigo) y "Cobrador" (quien paga la cuenta). */
+:root {
+  --bg: #eceff2;
+  --surface: #ffffff;
+  --ink: #14181d;
+  --muted: #5b6672;
+  --line: #d5dce2;
+  --accent: #0a7c6c;
+  --accent-ink: #ffffff;
+  --soft: #e1f1ee;
+  --warn: #a8480a;
+  --bad: #b42318;
+  --ok: #11743a;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-head: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1316; --surface: #171d22; --ink: #e8edf0; --muted: #94a1ac; --line: #2a343c;
+    --accent: #3ec9b2; --accent-ink: #04201b; --soft: #12372f; --warn: #f0a35e; --bad: #ff8f84; --ok: #62d68d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1316; --surface: #171d22; --ink: #e8edf0; --muted: #94a1ac; --line: #2a343c;
+  --accent: #3ec9b2; --accent-ink: #04201b; --soft: #12372f; --warn: #f0a35e; --bad: #ff8f84; --ok: #62d68d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 15px/1.45 var(--font-body);
+  padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+.meta { margin: 0; font: 600 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 6px 0 8px; font: 700 30px/1.1 var(--font-head); text-wrap: balance; }
+h2 { margin: 0; font: 600 13px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.paid { margin: 0; padding: 10px 12px; background: var(--soft); border-radius: 8px; font-size: 14px; }
+.paid b { font-family: var(--font-mono); font-weight: 600; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--line); border-radius: 10px; }
+.tabs button { min-height: 40px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: 600 14px var(--font-body); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.card { background: var(--surface); border-radius: 12px; padding: 16px; display: grid; gap: 14px; }
+label { font-weight: 600; font-size: 14px; }
+input[type="text"], textarea {
+  width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: var(--ink); font: 16px var(--font-body);
+}
+textarea { font: 13px/1.5 var(--font-mono); resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.field.err input { border-color: var(--bad); }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.hint.err { color: var(--bad); }
+ul { list-style: none; margin: 0; padding: 0; }
+.item { padding: 12px 0; border-top: 1px dashed var(--line); display: grid; gap: 10px; }
+.item:first-child { border-top: 0; padding-top: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.row > div:first-child { min-width: 0; }
+.iname { font-weight: 600; }
+.isub { font: 12.5px var(--font-mono); color: var(--muted); }
+.mine { font: 600 14px var(--font-mono); color: var(--accent); white-space: nowrap; }
+.step { display: inline-flex; align-items: center; gap: 2px; flex: none; }
+.step button, .toggle {
+  min-width: 44px; min-height: 44px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface);
+  color: var(--ink); font: 600 20px var(--font-body); cursor: pointer;
+}
+.step button:disabled { opacity: .35; cursor: default; }
+.step output { min-width: 34px; text-align: center; font: 600 18px var(--font-mono); }
+.toggle { padding: 0 16px; font-size: 14px; }
+.toggle[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.split { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; background: var(--bg); border-radius: 8px; font-size: 14px; }
+.sum { display: grid; gap: 6px; font-family: var(--font-mono); font-size: 14px; }
+.sum div { display: flex; justify-content: space-between; gap: 12px; }
+.sum .ln span:first-child { font-family: var(--font-body); min-width: 0; }
+.sum .tot { margin-top: 6px; padding-top: 10px; border-top: 2px solid var(--ink); font-size: 22px; font-weight: 600; }
+.empty { color: var(--muted); font-size: 14px; margin: 0; }
+.actions { display: grid; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 16px; border-radius: 10px;
+  border: 1.5px solid var(--accent); background: var(--accent); color: var(--accent-ink); font: 600 15px var(--font-body);
+  text-decoration: none; cursor: pointer;
+}
+.btn.alt { background: transparent; color: var(--accent); }
+.btn[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { padding: 10px 12px; background: var(--bg); border-radius: 8px; }
+.kpi small { display: block; color: var(--muted); font-size: 12px; }
+.kpi b { font: 600 18px var(--font-mono); }
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px dashed var(--line); }
+.person:first-child { border-top: 0; }
+.person label { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 500; }
+.person input { width: 22px; height: 22px; accent-color: var(--accent); }
+.person .amt { font: 600 15px var(--font-mono); }
+.pwrap { border-top: 1px dashed var(--line); }
+.pwrap:first-child { border-top: 0; }
+.pwrap .person { border-top: 0; padding-bottom: 0; }
+.pwrap.done .nm { text-decoration: line-through; color: var(--muted); }
+details { padding: 0 0 10px 32px; }
+summary { cursor: pointer; color: var(--accent); font-size: 13px; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+details .sum { padding: 6px 0 2px; font-size: 13px; }
+details .sum .tot { font-size: 16px; }
+.btn.sm { min-height: 40px; padding: 0 12px; font-size: 14px; }
+.mono { font-family: var(--font-mono); }
+.warn { color: var(--warn); }
+.bad { color: var(--bad); }
+@media (prefers-reduced-motion: no-preference) { .btn, .tabs button, .toggle { transition: background .15s, color .15s; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="meta">Mesa 521 · 17/11/26 · 10 personas</p>
+    <h1>Cuenta Mesa 521</h1>
+    <p class="paid">Ya pagado: Camarón al Ajillo, Doble Pepperoni y 2 Burlesque (<b>$44.990</b> con propina). La Napolitana la paga Ithan. Abajo está el resto, con propina del 10%.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Vista">
+    <button role="tab" id="tab-mine" aria-selected="true" data-tab="mine">Mi consumo</button>
+    <button role="tab" id="tab-cob" aria-selected="false" data-tab="cobrador">Cobrador</button>
+  </nav>
+
+  <section id="view-mine" class="wrap" style="max-width:none">
+    <div class="card">
+      <div class="field" id="nameField">
+        <label for="nombre">Tu nombre</label>
+        <input type="text" id="nombre" autocomplete="given-name" placeholder="Ej: Camila" maxlength="30">
+      </div>
+      <h2>Marca lo que consumiste</h2>
+      <ul id="items"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Tu cuenta</h2>
+      <div id="sum"></div>
+      <textarea id="msg" rows="8" readonly aria-label="Mensaje para enviar al cobrador"></textarea>
+      <p class="hint" id="sendHint"></p>
+      <div class="actions">
+        <button class="btn" id="copyBtn" type="button">Copiar mensaje</button>
+        <a class="btn alt" id="waBtn" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+        <button class="btn alt" id="addCob" type="button" hidden>Agregar a mi Cobrador</button>
+      </div>
+      <p class="hint">Pega el mensaje en el chat del grupo o envíalo directo a quien pagó la cuenta, y luego haz la transferencia por el total.</p>
+    </div>
+    <div class="card">
+      <h2>Datos para transferir</h2>
+      <div id="bank"></div>
+      <button class="btn alt" id="bankAll" type="button">Copiar monto + datos de transferencia</button>
+    </div>
+  </section>
+
+  <section id="view-cob" class="wrap" style="max-width:none" hidden>
+    <div class="card">
+      <h2>Mensajes recibidos</h2>
+      <p class="hint">Pega aquí lo que te mandan (puede ser todo el chat junto). La app lee solo la línea que empieza con [CUENTA521 y calcula cada monto.</p>
+      <textarea id="cobTa" rows="7" aria-label="Mensajes pegados" placeholder="Pega los mensajes aquí"></textarea>
+    </div>
+    <div class="card">
+      <div class="kpis" id="kpis"></div>
+      <div id="people"></div>
+    </div>
+    <div class="card">
+      <h2>Quién consume qué</h2>
+      <div id="byItem"></div>
+    </div>
+    <div class="card" id="pendCard">
+      <h2>Sin asignar</h2>
+      <div id="pend"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const ITEMS = [
+  { id: 'burl',   name: 'Burlesque 500 cc',        price: 2500,  qty: 19 },
+  { id: 'queen',  name: 'Queen Burlesque 500 cc',  price: 3000,  qty: 2 },
+  { id: 'soviet', name: 'Soviet Riot 500 cc',      price: 3250,  qty: 2 },
+  { id: 'mamba',  name: 'Black Mamba 500 cc',      price: 2500,  qty: 1 },
+  { id: 'klein',  name: 'Klein Alkoholfrei 500 cc',price: 2500,  qty: 1 },
+  { id: 'mojito', name: 'Mojito Cubano',           price: 6500,  qty: 2 },
+  { id: 'mich',   name: 'Michelar (extra)',        price: 2000,  qty: 1 },
+];
+const TIP = 0.10;
+const BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+const EXPECTED = Math.round(ITEMS.reduce((s, i) => s + i.price * i.qty, 0) * (1 + TIP));
+
+const $ = s => document.querySelector(s);
+const fmt = n => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let state = store.get('cuenta521', null);
+if (!state || typeof state !== 'object') state = {};
+state.name = typeof state.name === 'string' ? state.name : '';
+state.claims = state.claims && typeof state.claims === 'object' ? state.claims : {};
+state.split = state.split && typeof state.split === 'object' ? state.split : {};
+const save = () => store.set('cuenta521', state);
+
+/* ---- cálculo ---- */
+function buildLines(claims, split) {
+  return ITEMS.filter(i => claims[i.id] > 0).map(i => {
+    const u = claims[i.id];
+    const n = i.shared ? Math.min(10, Math.max(2, split[i.id] || 2)) : 1;
+    return { item: i, u, n, amt: Math.round(i.price * u / n) };
+  });
+}
+function totalsOf(lines) {
+  const sub = lines.reduce((s, l) => s + l.amt, 0);
+  const tip = Math.round(sub * TIP);
+  return { sub, tip, total: sub + tip };
+}
+const sanitizeName = s => s.replace(/[|\[\]\n;=]/g, '').trim();
+
+function lineText(l) {
+  if (l.item.shared) return `${l.item.name} (1/${l.n}) = ${fmt(l.amt)}`;
+  return `${l.u} x ${l.item.name} = ${fmt(l.amt)}`;
+}
+function codeOf(lines, name) {
+  const parts = lines.map(l => l.item.shared ? `${l.item.id}=${l.u}/${l.n}` : `${l.item.id}=${l.u}`);
+  return `[CUENTA521|${name}|${parts.join(';')}]`;
+}
+function buildMessage(name, lines, t) {
+  return [
+    `Cuenta Mesa 521 - ${name}`,
+    ...lines.map(lineText),
+    `Subtotal ${fmt(t.sub)}`,
+    `Propina 10% ${fmt(t.tip)}`,
+    `TOTAL A PAGAR: ${fmt(t.total)}`,
+    codeOf(lines, name),
+  ].join('\n');
+}
+
+/* ---- vista "Mi consumo" ---- */
+function renderItems() {
+  $('#items').innerHTML = ITEMS.map(i => {
+    const u = state.claims[i.id] || 0;
+    const n = Math.min(10, Math.max(2, state.split[i.id] || 2));
+    const mineAmt = u > 0 ? `<span class="mine">${fmt(Math.round(i.price * u / (i.shared ? n : 1)))}</span>` : '';
+    if (i.shared) {
+      return `<li class="item">
+        <div class="row">
+          <div><div class="iname">${i.name}</div><div class="isub">${fmt(i.price)} en total · se divide</div></div>
+          <button class="toggle" type="button" data-act="tog" data-id="${i.id}" aria-pressed="${u > 0}">${u > 0 ? 'Comí' : 'Comí yo'}</button>
+        </div>
+        ${u > 0 ? `<div class="split"><span>Dividida entre <b>${n}</b> personas</span>
+          <span class="step"><button type="button" data-act="ndec" data-id="${i.id}" aria-label="Menos personas" ${n <= 2 ? 'disabled' : ''}>−</button>
+          <button type="button" data-act="ninc" data-id="${i.id}" aria-label="Más personas" ${n >= 10 ? 'disabled' : ''}>+</button></span>
+          ${mineAmt}</div>` : ''}
+      </li>`;
+    }
+    return `<li class="item"><div class="row">
+      <div><div class="iname">${i.name}</div><div class="isub">${fmt(i.price)} c/u · quedan ${i.qty}</div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${mineAmt}
+        <span class="step">
+          <button type="button" data-act="dec" data-id="${i.id}" aria-label="Quitar un ${i.name}" ${u <= 0 ? 'disabled' : ''}>−</button>
+          <output aria-live="polite">${u}</output>
+          <button type="button" data-act="inc" data-id="${i.id}" aria-label="Agregar un ${i.name}" ${u >= i.qty ? 'disabled' : ''}>+</button>
+        </span>
+      </div></div></li>`;
+  }).join('');
+}
+
+function renderSummary() {
+  const lines = buildLines(state.claims, state.split);
+  const t = totalsOf(lines);
+  const name = sanitizeName(state.name);
+  const ready = lines.length > 0 && name.length > 0;
+  $('#sum').innerHTML = lines.length === 0
+    ? '<p class="empty">Aún no marcas nada. Usa + para sumar lo que consumiste.</p>'
+    : `<div class="sum">
+        ${lines.map(l => `<div class="ln"><span>${esc(lineText(l).replace(/ = \$[\d.]+$/, ''))}</span><span>${fmt(l.amt)}</span></div>`).join('')}
+        <div><span>Subtotal</span><span>${fmt(t.sub)}</span></div>
+        <div><span>Propina 10%</span><span>${fmt(t.tip)}</span></div>
+        <div class="tot"><span>Total</span><span>${fmt(t.total)}</span></div>
+      </div>`;
+  const msg = ready ? buildMessage(name, lines, t) : '';
+  $('#msg').value = msg;
+  $('#msg').hidden = !ready;
+  $('#copyBtn').disabled = !ready;
+  $('#addCob').disabled = !ready;
+  $('#waBtn').setAttribute('aria-disabled', String(!ready));
+  $('#waBtn').href = ready ? 'https://wa.me/?text=' + encodeURIComponent(msg) : '#';
+  const hint = $('#sendHint');
+  hint.className = 'hint';
+  hint.textContent = lines.length === 0 ? '' : (name ? '' : 'Escribe tu nombre para generar el mensaje.');
+}
+
+function renderMine() { renderItems(); renderSummary(); }
+
+$('#items').addEventListener('click', e => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const id = b.dataset.id, it = BY_ID[id];
+  const cur = state.claims[id] || 0;
+  const act = b.dataset.act;
+  if (act === 'inc') state.claims[id] = Math.min(it.qty, cur + 1);
+  else if (act === 'dec') state.claims[id] = Math.max(0, cur - 1);
+  else if (act === 'tog') state.claims[id] = cur > 0 ? 0 : 1;
+  else if (act === 'ninc') state.split[id] = Math.min(10, (state.split[id] || 2) + 1);
+  else if (act === 'ndec') state.split[id] = Math.max(2, (state.split[id] || 2) - 1);
+  if (!state.claims[id]) delete state.claims[id];
+  save();
+  const f = document.activeElement && document.activeElement.dataset ? { act: document.activeElement.dataset.act, id: document.activeElement.dataset.id } : null;
+  renderMine();
+  if (f) { const again = document.querySelector(`button[data-act="${f.act}"][data-id="${f.id}"]:not(:disabled)`) || document.querySelector(`button[data-id="${f.id}"]:not(:disabled)`); if (again) again.focus(); }
+});
+
+$('#nombre').value = state.name;
+$('#nombre').addEventListener('input', e => {
+  state.name = e.target.value;
+  $('#nameField').classList.remove('err');
+  save();
+  renderSummary();
+});
+
+$('#copyBtn').addEventListener('click', async () => {
+  const ta = $('#msg');
+  if (!ta.value) { $('#nameField').classList.add('err'); $('#nombre').focus(); return; }
+  const btn = $('#copyBtn');
+  await copyFlash(ta.value, btn, 'Copiar mensaje');
+});
+$('#waBtn').addEventListener('click', e => {
+  if ($('#waBtn').getAttribute('aria-disabled') === 'true') {
+    e.preventDefault();
+    if (!sanitizeName(state.name)) { $('#nameField').classList.add('err'); $('#nombre').focus(); }
+  }
+});
+
+/* ---- vista "Cobrador" ---- */
+const cobTa = $('#cobTa');
+cobTa.value = store.get('cuenta521_cob', '');
+let paid = store.get('cuenta521_paid', {});
+if (!paid || typeof paid !== 'object') paid = {};
+const openSet = new Set();
+
+function parseMessages(text) {
+  const people = new Map();
+  const re = /\[CUENTA521\|([^|\]]+)\|([^\]]*)\]/g;
+  let m;
+  while ((m = re.exec(text))) {
+    const name = m[1].trim();
+    const claims = {}, split = {};
+    m[2].split(';').forEach(p => {
+      const mm = /^([a-z]+)=(\d+)(?:\/(\d+))?$/.exec(p.trim());
+      if (!mm || !BY_ID[mm[1]]) return;
+      const it = BY_ID[mm[1]];
+      claims[it.id] = Math.min(it.qty, parseInt(mm[2], 10));
+      if (mm[3]) split[it.id] = parseInt(mm[3], 10);
+    });
+    const lines = buildLines(claims, split);
+    if (lines.length) people.set(name.toLowerCase(), { name, lines, total: totalsOf(lines).total });
+  }
+  return [...people.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+}
+
+function renderCob() {
+  const list = parseMessages(cobTa.value);
+  const assigned = list.reduce((s, p) => s + p.total, 0);
+  const received = list.filter(p => paid[p.name.toLowerCase()]).reduce((s, p) => s + p.total, 0);
+  $('#kpis').innerHTML = `
+    <div class="kpi"><small>Por cobrar (con propina)</small><b>${fmt(EXPECTED)}</b></div>
+    <div class="kpi"><small>Ya asignado</small><b>${fmt(assigned)}</b></div>
+    <div class="kpi"><small>Pagado</small><b>${fmt(received)}</b></div>
+    <div class="kpi"><small>Falta asignar</small><b>${fmt(EXPECTED - assigned)}</b></div>`;
+  $('#people').innerHTML = list.length === 0
+    ? '<p class="empty">Todavía no hay mensajes. Pega arriba lo que te manden.</p>'
+    : list.map(p => {
+        const k = p.name.toLowerCase(), done = !!paid[k];
+        const t = totalsOf(p.lines);
+        return `<div class="pwrap ${done ? 'done' : ''}"><div class="person">
+          <label><input type="checkbox" data-k="${esc(k)}" ${done ? 'checked' : ''}><span class="nm">${esc(p.name)}</span></label>
+          <span class="amt">${fmt(p.total)}</span></div>
+          <details data-k="${esc(k)}" ${openSet.has(k) ? 'open' : ''}><summary>Ver detalle</summary>
+            <div class="sum">
+              ${p.lines.map(l => `<div class="ln"><span>${esc(lineText(l).replace(/ = \$[\d.]+$/, ''))}</span><span>${fmt(l.amt)}</span></div>`).join('')}
+              <div><span>Subtotal</span><span>${fmt(t.sub)}</span></div>
+              <div><span>Propina 10%</span><span>${fmt(t.tip)}</span></div>
+              <div class="tot"><span>Total</span><span>${fmt(t.total)}</span></div>
+            </div></details></div>`;
+      }).join('');
+
+  const used = {};
+  list.forEach(p => p.lines.forEach(l => { used[l.item.id] = (used[l.item.id] || 0) + l.u / l.n; }));
+  const rows = [];
+  ITEMS.forEach(i => {
+    const left = i.qty - (used[i.id] || 0);
+    if (Math.abs(left) < 0.005) return;
+    const money = Math.abs(left) * i.price;
+    if (left > 0) {
+      const q = i.shared ? left.toFixed(2).replace('.', ',') + ' de la porción' : left + ' de ' + i.qty;
+      rows.push(`<div class="person"><span>${i.name}<br><span class="isub">quedan ${q}</span></span><span class="amt warn">${fmt(money)}</span></div>`);
+    } else {
+      rows.push(`<div class="person"><span>${i.name}<br><span class="isub bad">reclamado de más</span></span><span class="amt bad">${fmt(money)}</span></div>`);
+    }
+  });
+  const who = {};
+  list.forEach(p => p.lines.forEach(l => {
+    (who[l.item.id] = who[l.item.id] || []).push(l.item.shared ? `${p.name} (1/${l.n})` : (l.u > 1 ? `${p.name} ×${l.u}` : p.name));
+  }));
+  $('#byItem').innerHTML = Object.keys(who).length
+    ? ITEMS.filter(i => who[i.id]).map(i => `<div class="person"><span><b>${i.name}</b><br><span class="isub">${esc(who[i.id].join(', '))}</span></span></div>`).join('')
+    : '<p class="empty">Aparece cuando llegue el primer mensaje.</p>';
+  $('#pend').innerHTML = rows.length ? rows.join('') : (list.length ? '<p class="empty">Todo asignado.</p>' : '<p class="empty">Aparece cuando llegue el primer mensaje.</p>');
+}
+
+cobTa.addEventListener('input', () => { store.set('cuenta521_cob', cobTa.value); renderCob(); });
+$('#people').addEventListener('change', e => {
+  const k = e.target.dataset && e.target.dataset.k;
+  if (!k) return;
+  if (e.target.checked) paid[k] = true; else delete paid[k];
+  store.set('cuenta521_paid', paid);
+  renderCob();
+});
+
+$('#people').addEventListener('toggle', e => {
+  const k = e.target.dataset && e.target.dataset.k;
+  if (!k) return;
+  if (e.target.open) openSet.add(k); else openSet.delete(k);
+}, true);
+
+/* ---- datos de transferencia ---- */
+const BANK = [
+  ['Nombre', 'Benjamin Lara'],
+  ['RUT', '20.079.830-9'],
+  ['Banco', 'Banco Estado'],
+  ['Tipo de cuenta', 'Cuenta RUT'],
+  ['N° de cuenta', '20079830'],
+  ['Correo', 'benjamin.lara.urra@gmail.com'],
+];
+$('#bank').innerHTML = BANK.map(([k, v], i) =>
+  `<div class="person"><span><span class="isub">${k}</span><br><b class="mono">${esc(v)}</b></span>
+   <button class="btn alt sm" type="button" data-i="${i}">Copiar</button></div>`).join('');
+async function copyFlash(text, btn, label) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch (err) {}
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { ok = document.execCommand('copy'); } catch (err) {}
+    ta.remove();
+  }
+  btn.textContent = ok ? 'Copiado ✓' : 'No se pudo copiar';
+  setTimeout(() => { btn.textContent = label; }, 2000);
+}
+$('#bank').addEventListener('click', e => {
+  const b = e.target.closest('button[data-i]');
+  if (b) copyFlash(BANK[+b.dataset.i][1], b, 'Copiar');
+});
+$('#bankAll').addEventListener('click', e => {
+  const t = totalsOf(buildLines(state.claims, state.split));
+  const head = t.total > 0 ? `Monto a transferir: ${fmt(t.total)}\n` : '';
+  copyFlash(head + BANK.map(([k, v]) => `${k}: ${v}`).join('\n'), e.currentTarget, 'Copiar monto + datos de transferencia');
+});
+
+/* ---- pestañas ---- */
+function showTab(name) {
+  const cob = name === 'cobrador';
+  $('#view-mine').hidden = cob;
+  $('#view-cob').hidden = !cob;
+  $('#tab-mine').setAttribute('aria-selected', String(!cob));
+  $('#tab-cob').setAttribute('aria-selected', String(cob));
+  if (cob) { store.set('cuenta521_owner', true); $('#addCob').hidden = false; }
+}
+$('#addCob').hidden = !store.get('cuenta521_owner', false);
+$('#addCob').addEventListener('click', () => {
+  const msg = $('#msg').value;
+  if (!msg) return;
+  cobTa.value = (cobTa.value.trim() ? cobTa.value.trim() + '\n\n' : '') + msg;
+  store.set('cuenta521_cob', cobTa.value);
+  renderCob();
+  const b = $('#addCob');
+  b.textContent = 'Agregado al Cobrador';
+  setTimeout(() => { b.textContent = 'Agregar a mi Cobrador'; }, 2000);
+});
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  showTab(b.dataset.tab);
+  try { location.hash = b.dataset.tab === 'cobrador' ? 'cobrador' : ''; } catch (e) {}
+}));
+window.addEventListener('hashchange', () => showTab(location.hash === '#cobrador' ? 'cobrador' : 'mine'));
+
+renderMine();
+renderCob();
+showTab(location.hash === '#cobrador' ? 'cobrador' : 'mine');
+</script>
+</body>
+</html>
